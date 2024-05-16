@@ -7,7 +7,7 @@ const app = express()
 app.use(cors());
 app.use(bodyParser.json())
 
-const YOUR_TOKEN = 'f7610afc00885a0b24e60d08ffc53679e6061de38ae2ad7c';
+const YOUR_TOKEN = ''; // jupyter server token
 const users = {
   'vedant': '123',
 };
