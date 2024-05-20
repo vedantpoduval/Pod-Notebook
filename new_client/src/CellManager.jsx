@@ -6,6 +6,8 @@ function CellManager() {
   const [cells, setCells] = useState([<Cell/>]);
   const [kernel,setKernel] = useState('Kernel running');
   const [count,setCount] = useState(1);
+  
+  
   const addCellHandler = () => {
     console.log("Add Cell is clicked");
     setCells(cells => [...cells, <Cell key={cells.length} />]);
@@ -26,6 +28,24 @@ function CellManager() {
     }
 
   }
+  const createNewSessionHandler = async () => {
+    try {
+      const response = await axios.post('http://localhost:5000/new-session');
+      const { sessionId, kernelId } = response.data;
+      console.log('New session created:', sessionId, kernelId);
+      setKernel(`New session created: ${sessionId}`);
+
+      const newWindow = window.open(window.location.href, '_blank');
+      console.log(newWindow)
+      if (newWindow) {
+        newWindow.focus();
+      } else {
+        console.error('Failed to open a new window. Pop-up blocker might be enabled.');
+      }
+    } catch (error) {
+      console.error('Error creating new session:', error);
+    }
+  };
 
   return (
     <div style ={{position:'absolute',top:'10px',left:'10px'}}>
@@ -84,6 +104,25 @@ function CellManager() {
           userSelect: 'none',
           }} onClick={restartkernelHandler}>restart kernel</button>
           {kernel}
+          <button style={{
+            backgroundColor: 'white',
+            color: 'black',
+            border: '2px solid #000000',
+            marginBottom: '10px',
+            marginLeft: '10px',
+            width: 'auto',
+            minWidth: '150px',
+            height: '30px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            padding: '0 10px',
+            outline: 'none',
+            userSelect: 'none',
+          }} onClick={createNewSessionHandler}>Create New Session</button>
         </div>
 
       <div style={{ marginTop: '10px' }}>

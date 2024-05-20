@@ -11,9 +11,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@codemirror/basic-setup": "^0.20.0",
+    "@codemirror/lang-python": "^6.1.6",
+    "@codemirror/state": "^6.4.1",
+    "@codemirror/theme-one-dark": "^6.1.2",
+    "@codemirror/view": "^6.26.3",
     "@mui/icons-material": "^5.15.17",
     "@mui/material": "^5.15.17",
+    "@uiw/react-codemirror": "^4.22.1",
     "axios": "^1.6.8",
+    "codemirror": "^5.65.16",
     "react": "^18.2.0",
     "react-ace": "^11.0.1",
     "react-dom": "^18.2.0",

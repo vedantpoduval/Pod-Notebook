@@ -6,8 +6,7 @@ const bodyParser = require('body-parser')
 const app = express()
 app.use(cors());
 app.use(bodyParser.json())
-
-const YOUR_TOKEN = ''; // jupyter server token
+const YOUR_TOKEN = '3818208486d2b36cee9000f9bfa8c33912c319d1634e3601'; // jupyter server token
 const users = {
   'vedant': '123',
 };
@@ -82,7 +81,7 @@ function removeAnsiEscapeSequences(text) {
   return text.replace(ansiEscapeRegex, '');
 }
 
-async function createSession() {
+async function createSession(path = 'Topgrep.ipynb') {
     console.log('Creating session')
     const xsrfToken = await CreateCookie();
   
@@ -95,7 +94,7 @@ async function createSession() {
     kernel: { name: 'python3' },
     name: 'mykernel',
     type: 'notebook',
-    path: 'Topgrep.ipynb',
+    path: path,
   };
   try {
     const response = await axios.post(`${url}/api/sessions`, sessionData, { headers });
@@ -110,8 +109,19 @@ async function createSession() {
 }
 // createSession()
 // fetchJupyterSessions();
-
-
+async function Createfile(){
+  try{
+      const xsrfToken = await CreateCookie();
+      console.log(typeof(xsrfToken))
+      const headers = { 'Authorization': `Token ${YOUR_TOKEN}`, 'Content-Type': 'application/json','X-XSRFToken': xsrfToken };
+      const data = {copy_from:'topjupyter.ipynb',ext:'.ipynb',type:'notebook',}
+      const response = await axios.post(`${url}/api/contents`,data,{headers})
+      console.log("File Created ",response.data);
+      return response.data.path
+  }catch(error){
+      console.error('Error in creating file: ',error.message);
+  }
+}
 async function executecodewithws(kernelId,sessionId,user_code){
     // console.log("Insisde ws")
     const wsURL = url.replace('http', 'ws');
@@ -156,9 +166,11 @@ async function executecodewithws(kernelId,sessionId,user_code){
             else if (msg.channel === 'iopub' && msg.header.msg_type === 'stream') {
                 console.log('Output: \n',msg.content.text)
                 output += msg.content.text;}
-            else if (msg.channel === 'iopub' && msg.header.msg_type === 'execute_result') {
-                  console.log('Output: \n',msg.content.data['text/plain'])
-                  output += msg.content.data['text/plain'];}
+                // resolve(output);}
+            // else if (msg.channel === 'iopub' && msg.header.msg_type === 'execute_result') {
+            //       // console.log('Output: \n',msg.content.data['text/plain'])
+            //       output += msg.content.data['text/plain'];}
+            //       // resolve(output);}     
             else if (msg.msg_type === 'execute_reply' && msg.channel === 'shell') {
                     console.log('Execution finished.');
                     ws.close(); 
@@ -190,6 +202,17 @@ app.post("/jupyter",async (req,res)=>{
             res.status(500).json({ error: "An error occurred while executing the code" });
         }
         })
+app.post('/new-session', async (req, res) => {
+          try {
+              const session_path = await Createfile()
+              const { sessionId, kernelId } = await createSession(session_path);
+              // console.log(sessionId,kernelId)
+              res.json({ success: true, sessionId, kernelId });
+          } catch (error) {
+              console.error('Error creating new session:', error.message);
+              // res.status(500).json({ error: 'Failed to create a new session', details: error.message });
+          }
+      });
 app.get("/jupyter",async (req,res)=>{
           
           try {
@@ -207,3 +230,5 @@ app.get("/jupyter",async (req,res)=>{
           })
 
 app.listen(5000,()=>{console.log("Port started at 5000")})
+
+

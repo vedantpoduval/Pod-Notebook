@@ -1,28 +1,3 @@
-
-import React, { useState } from 'react';
-import axios from 'axios';
-function Cell() {
-  const [execute,onExecute] = useState('')    //useState(0)
-  const [output,setOutput] = useState('')
-  const handleChange = (e) => {
-    const txtarea = e.target
-    onExecute(txtarea.value)
-  } 
- 
-  const executehandle = async () => {
-    console.log("Executing code ... ",execute)
-    try {
-        const response = await axios.post("http://localhost:5000/jupyter",{code : execute})
-        console.log("Server response ",response.data.output)
-        setOutput(response.data.output)
-    } catch (error) {
-        console.error("Error sending code to server ",error)
-        setOutput(error)
-    }
-  }
-  return (
-
-    <>
 <div style={{ display: 'flex', flexDirection: 'row' }}>
         <button style={{
             backgroundColor: 'white',
@@ -65,11 +40,4 @@ function Cell() {
           marginLeft: '50px'}}>
           {output}
         </pre>
-    </div>)} 
-        </>
-
-  )
-}
-
-export default Cell
-
+    </div>)}
