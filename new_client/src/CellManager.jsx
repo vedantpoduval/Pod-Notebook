@@ -34,7 +34,6 @@ function CellManager() {
       const { sessionId, kernelId } = response.data;
       console.log('New session created:', sessionId, kernelId);
       setKernel(`New session created: ${sessionId}`);
-
       const newWindow = window.open(window.location.href, '_blank');
       console.log(newWindow)
       if (newWindow) {
@@ -46,6 +45,14 @@ function CellManager() {
       console.error('Error creating new session:', error);
     }
   };
+  const killKernelhandler = async () => {
+    const response = await axios.get('http://localhost:5000/jupyterkernel')
+    console.log(response.data.kernelstat)
+    if (response.data.kernelstat === 204){
+      setKernel('Kernel Killed')
+    }
+  };
+  
 
   return (
     <div style ={{position:'absolute',top:'10px',left:'10px'}}>
@@ -123,6 +130,25 @@ function CellManager() {
             outline: 'none',
             userSelect: 'none',
           }} onClick={createNewSessionHandler}>Create New Session</button>
+          <button style={{
+            backgroundColor: 'white',
+            color: 'black',
+            border: '2px solid #000000',
+            marginBottom: '10px',
+            marginLeft: '10px',
+            width: 'auto',
+            minWidth: '150px',
+            height: '30px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            padding: '0 10px',
+            outline: 'none',
+            userSelect: 'none',
+          }} onClick={killKernelhandler}>Kill Kernel</button>
         </div>
 
       <div style={{ marginTop: '10px' }}>

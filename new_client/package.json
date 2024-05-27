@@ -16,6 +16,7 @@
     "@codemirror/state": "^6.4.1",
     "@codemirror/theme-one-dark": "^6.1.2",
     "@codemirror/view": "^6.26.3",
+    "@monaco-editor/react": "^4.6.0",
     "@mui/icons-material": "^5.15.17",
     "@mui/material": "^5.15.17",
     "@uiw/react-codemirror": "^4.22.1",
@@ -24,6 +25,7 @@
     "react": "^18.2.0",
     "react-ace": "^11.0.1",
     "react-dom": "^18.2.0",
+    "react-monaco-editor": "^0.55.0",
     "react-router-dom": "^6.23.1",
     "uuid": "^9.0.1"
   },

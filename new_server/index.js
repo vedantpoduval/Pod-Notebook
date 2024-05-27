@@ -6,7 +6,7 @@ const bodyParser = require('body-parser')
 const app = express()
 app.use(cors());
 app.use(bodyParser.json())
-const YOUR_TOKEN = '3818208486d2b36cee9000f9bfa8c33912c319d1634e3601'; // jupyter server token
+const YOUR_TOKEN = '8e7397f63a44a6487d0f73f3e7d698946d4527efe4e5d3d8'; // jupyter server token
 const users = {
   'vedant': '123',
 };
@@ -122,15 +122,48 @@ async function Createfile(){
       console.error('Error in creating file: ',error.message);
   }
 }
+async function killkernel(){
+  const kernelId = await fetchKernelDetails()
+  console.log(kernelId)
+  if (!kernelId) {
+    console.error('No kernel ID available to kill');
+    return;
+  }
+  try {
+    const xsrfToken = await CreateCookie();
+    // console.log(typeof(xsrfToken))
+    const headers = { 'Authorization': `Token ${YOUR_TOKEN}`, 'Content-Type': 'application/json','X-XSRFToken': xsrfToken };
+    const response = await axios.post(`http://localhost:8888/api/kernels/${kernelId}/interrupt`,{},{headers});
+    if (activeWebSockets[kernelId]) {
+      console.log(`Closing WebSocket connection due to kernel kill: ${kernelId}`);
+      activeWebSockets[kernelId].close();
+      delete activeWebSockets[kernelId];
+  }
+    console.log('Kernel killed successfully ',response.status);
+    return response.status
+  } catch (error) {
+    console.error('Error killing kernel:', error);
+  }
+}
+const activeWebSockets = {};
 async function executecodewithws(kernelId,sessionId,user_code){
     // console.log("Insisde ws")
+    console.log(kernelId)
     const wsURL = url.replace('http', 'ws');
     // console.log(wsURL)
     let output = ''
     const kernelWebSocketURL = `${wsURL}/api/kernels/${kernelId}/channels?token=${YOUR_TOKEN}`;
     // console.log(kernelWebSocketURL)
+    // console.log('active websockets ',activeWebSockets)
+  //   if (activeWebSockets[kernelId]) {
+  //     console.log(`Closing existing WebSocket connection for kernel ${kernelId}`);
+  //     activeWebSockets[kernelId].close();
+  //     delete activeWebSockets[kernelId];
+  // }
     return new Promise((resolve,reject)=>{
         const ws = new WebSocket(kernelWebSocketURL);
+        activeWebSockets[kernelId] = ws;
+        // console.log('new websocket added to dict ',activeWebSockets)
         ws.on('open', function open() {
             // fetchJupyterSessions()
             console.log('WebSocket connection established');
@@ -165,16 +198,15 @@ async function executecodewithws(kernelId,sessionId,user_code){
             }
             else if (msg.channel === 'iopub' && msg.header.msg_type === 'stream') {
                 console.log('Output: \n',msg.content.text)
-                output += msg.content.text;}
-                // resolve(output);}
-            // else if (msg.channel === 'iopub' && msg.header.msg_type === 'execute_result') {
-            //       // console.log('Output: \n',msg.content.data['text/plain'])
-            //       output += msg.content.data['text/plain'];}
-            //       // resolve(output);}     
+                output = msg.content.text;
+                resolve(output);}
+            else if (msg.channel === 'iopub' && msg.header.msg_type === 'execute_result') {
+                  // console.log('Output: \n',msg.content.data['text/plain'])
+                  output += msg.content.data['text/plain'];}
+                  // resolve(output);}     
             else if (msg.msg_type === 'execute_reply' && msg.channel === 'shell') {
                     console.log('Execution finished.');
                     ws.close(); 
-                    resolve(output);
                     }
             else if(msg.msg_type === 'error'){
                 console.log("Error is : ",msg.content.ename)
@@ -188,7 +220,11 @@ async function executecodewithws(kernelId,sessionId,user_code){
                     console.error('WebSocket error:', err.message);
                     reject(`WebSocket error: ${err.message}`);
                 });
-       })};
+        ws.on('close', () => {
+                  console.log(`WebSocket connection to kernel ${kernelId} closed`);
+                  delete activeWebSockets[kernelId];
+              });        
+      })};
 app.post("/jupyter",async (req,res)=>{
         const userCode = req.body.code
         console.log("received code to execute: ",userCode)
@@ -219,6 +255,12 @@ app.get("/jupyter",async (req,res)=>{
               const kernelId = await fetchKernelDetails()
               // console.log("Kernel: ",kernelId)
               if (kernelId !== ''){
+                // Closing existing WebSocket connection if it exists
+                if (activeWebSockets[kernelId]) {
+                  console.log(`Closing WebSocket connection due to kernel restart: ${kernelId}`);
+                  activeWebSockets[kernelId].close();
+                  delete activeWebSockets[kernelId];
+          }
                 const response = await restartKernel(kernelId)
                 console.log('Kernel restarted',response)
               }
@@ -228,7 +270,15 @@ app.get("/jupyter",async (req,res)=>{
               // res.status(500).json({ error: "An error occurred while executing the code" });
           }
           })
-
+app.get("/jupyterkernel",async (req,res)=>{
+          
+            try {
+                const kernelstat = await killkernel()
+                res.json({kernelstat})
+              }catch{
+                console.error("Error getting kernelID for kernel kill:", error.message);
+              }
+            });
 app.listen(5000,()=>{console.log("Port started at 5000")})
 
 
